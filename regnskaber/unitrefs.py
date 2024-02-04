@@ -16,7 +16,7 @@ def build_unit_map():
 
     tree = ET.parse(StringIO(r.text))
     utr = tree.getroot()
-    units = utr.getchildren()[0]
+    units = list(utr)[0]
 
     ns = '{http://www.xbrl.org/2009/utr}'
 

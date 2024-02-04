@@ -1,19 +1,30 @@
-certifi==2017.7.27.1
+beautifulsoup4==4.12.3
+certifi==2023.11.17
 chardet==3.0.4
-elasticsearch1==1.10.0
-elasticsearch1-dsl==0.0.12
-idna==2.6
-isodate==0.5.4
-langdetect==1.0.7
-lxml==4.0.0
-mysqlclient==1.3.12
-numpy==1.14.2
+elasticsearch==6.8.2
+elasticsearch-dsl==6.4.0
+greenlet==3.0.3
+idna==2.7
+joblib==1.3.2
+Levenshtein==0.23.0
+lxml==5.1.0
+numpy==1.24.4
+psycopg2-binary==2.9.9
 python-dateutil==2.6.1
-requests==2.18.4
-scipy==1.0.1
-six==1.11.0
-sklearn==0.0
-SQLAlchemy==1.1.14
-urllib3==1.22
-xmljson==0.1.9
--e git+https://github.com/Niels-Peter/XBRL-AI.git@8a90c18ed495487797c6f82d0e6bc8618b5c0bce#egg=xbrl_ai-0.2
+python-Levenshtein==0.23.0
+pytz==2017.3
+rapidfuzz==3.6.1
+# Regnskaber==0.1
+requests==2.20.0
+scikit-learn==1.3.2
+scipy==1.10.1
+six==1.16.0
+soupsieve==2.5
+SQLAlchemy==1.4.0
+threadpoolctl==3.2.0
+tqdm==4.66.1
+typing_extensions==4.9.0
+ujson==5.9.0
+urllib3==1.24.3
+# xbrl-ai==0.2
+xmljson==0.2.1

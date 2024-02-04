@@ -8,11 +8,12 @@ import time
 from datetime import datetime
 from multiprocessing import Process, Lock
 
-import elasticsearch1
+import elasticsearch
 import requests
 
-from elasticsearch1 import Elasticsearch
-from elasticsearch1_dsl import Search
+from elasticsearch import Elasticsearch
+from elasticsearch import Elasticsearch
+from elasticsearch_dsl import Search
 
 from .ioqueue import IOQueueManager
 
@@ -101,7 +102,7 @@ class InputRegnskab(object):
 
 def query_by_erst_id(erst_id):
     url = 'http://distribution.virk.dk:80'
-    client = Elasticsearch(url, timeout=300)
+    client = Elasticsearch(url, timeout=300, max_retries=10, retry_on_timeout=True, headers={'Content-Type': 'application/xml'})
     index = 'offentliggoerelser'
     search = Search(using=client, index=index).query(
         'match', _id=erst_id
@@ -289,11 +290,19 @@ def producer_scan(search_result, queue, queue_lock=None):
 
 
 def get_virk_search(from_date):
-    client = elasticsearch1.Elasticsearch('http://distribution.virk.dk:80',
-                                          timeout=300)
+    client = elasticsearch.Elasticsearch('http://distribution.virk.dk:80',
+                                          timeout=300, max_retries=10, retry_on_timeout=True)
     s = Search(using=client, index='offentliggoerelser')
     s = s.filter('range', offentliggoerelsesTidspunkt={'gte': from_date})
     s = s.sort('offentliggoerelsesTidspunkt')
+
+    elastic_search_scan_size = 1000
+    elastic_search_scroll_time = u'5m'
+
+    params = {'scroll': elastic_search_scroll_time, 'size': elastic_search_scan_size}
+
+    s = s.params(**params)
+    s = s.query('match_all')
     return s
 
 

@@ -12,7 +12,7 @@ from sqlalchemy import Sequence, UniqueConstraint
 from sqlalchemy import BigInteger, Boolean, Float, Integer
 
 
-from .models import Base
+from .models import Base, Header
 from . import Session, engine
 
 current_regnskabs_id = 0
@@ -133,25 +133,26 @@ method_translation = {
 }
 
 
-class Header(Base):
-    __tablename__ = 'Header'
-    id = Column(Integer, Sequence('id_seq'), primary_key=True)
-    financial_statement_id = Column(Integer())
-    consolidated = Column(Boolean())
-    currency = Column(String(5))
-    language = Column(String(5))
-    balancedato = Column(DateTime)
-    gsd_IdentificationNumberCvrOfReportingEntity = Column(BigInteger)
-    gsd_InformationOnTypeOfSubmittedReport = Column(Text)
-    gsd_ReportingPeriodStartDate = Column(DateTime)
-    fsa_ClassOfReportingEntity = Column(Text)
-    cmn_TypeOfAuditorAssistance = Column(Text)
+# class Header(Base):
+#     __tablename__ = 'Header'
+#     id = Column(Integer, Sequence('id_seq'), primary_key=True)
+#     financial_statement_id = Column(Integer())
+#     consolidated = Column(Boolean())
+#     currency = Column(String(5))
+#     language = Column(String(5))
+#     balancedato = Column(DateTime)
+#     gsd_IdentificationNumberCvrOfReportingEntity = Column(BigInteger)
+#     gsd_InformationOnTypeOfSubmittedReport = Column(Text)
+#     gsd_ReportingPeriodStartDate = Column(DateTime)
+#     gsd_ReportingPeriodEndDate = Column(DateTime)
+#     fsa_ClassOfReportingEntity = Column(Text)
+#     cmn_TypeOfAuditorAssistance = Column(Text)
 
-    __table_args__ = (
-        UniqueConstraint('financial_statement_id', 'consolidated',
-                         name='unique_financial_statement_id_consolidated'
-                         ),
-    )
+#     __table_args__ = (
+#         UniqueConstraint('financial_statement_id', 'consolidated',
+#                          name='unique_financial_statement_id_consolidated'
+#                          ),
+#     )
 
 
 def make_header(fs_dict, financial_statement_id, consolidated, session):
@@ -193,6 +194,13 @@ def make_header(fs_dict, financial_statement_id, consolidated, session):
         )
     except ValueError:
         header_values['gsd_ReportingPeriodStartDate'] = None
+
+    try:
+        header_values['gsd_ReportingPeriodEndDate'] = (
+            generic_date(fs_dict, 'gsd:ReportingPeriodEndDate')
+        )
+    except ValueError:
+        header_values['gsd_ReportingPeriodEndDate'] = None
 
     try:
         header_values['fsa_ClassOfReportingEntity'] = (
@@ -300,13 +308,13 @@ def populate_row(table_description, fs_entries, fs_id,
     return result
 
 
-def populate_table(table_description, table):
+def populate_table(table_description, table, replace_existing=False):
     assert(isinstance(table_description, dict))
     assert(isinstance(table, Table))
     print("Populating table %s" % table_description['tablename'])
     cache = []
     cache_sz = 2000
-    fs_iterator = financial_statement_iterator()
+    fs_iterator = financial_statement_iterator(table, replace_existing=replace_existing)
 
     ERASE = '\r\x1B[K'
     progress_template = "Processing financial statements %s/%s"
@@ -426,7 +434,10 @@ def register_method(name, func):
     method_translation[name] = func
 
 
-def main(table_descriptions_file):
+def main(table_descriptions_file, replace_existing_table=False):
+
+    # if replace existing table, drops existing (with data)
+
     Base.metadata.create_all(engine)
     tables = dict()
 
@@ -434,8 +445,8 @@ def main(table_descriptions_file):
         table_descriptions = json.load(fp)
 
     for t in table_descriptions:
-        table = create_table(t, drop_table=True)
-        populate_table(t, table)
+        table = create_table(t, drop_table=replace_existing_table)
+        populate_table(t, table, replace_existing=replace_existing_table)
         tables[t['tablename']] = table
 
     return

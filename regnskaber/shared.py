@@ -2,11 +2,11 @@ import datetime
 
 from contextlib import closing
 
-from .models import FinancialStatement
+from .models import FinancialStatement, Header
 from . import Session
 
 from sqlalchemy.sql.expression import func
-
+# from .make_feature_table import Header
 
 def get_reporting_period(fs_entries):
     date_format = '%Y-%m-%d'
@@ -14,11 +14,27 @@ def get_reporting_period(fs_entries):
     end_date = None
     for entry in fs_entries:
         if entry.fieldName == 'gsd:ReportingPeriodStartDate':
-            start_date = entry.fieldValue
+            start_date = entry.fieldValue.strip()
         if entry.fieldName == 'gsd:ReportingPeriodEndDate':
-            end_date = entry.fieldValue
-    start_date = datetime.datetime.strptime(start_date[:10], date_format)
-    end_date = datetime.datetime.strptime(end_date[:10], date_format)
+            end_date = entry.fieldValue.strip()
+    
+    # try/except to catch rare invalid dates
+    try:
+        start_date = datetime.datetime.strptime(start_date[:10], date_format)
+
+        if start_date.year > 2200:
+            start_date = datetime.datetime(2200, 1, 1)
+    except:
+        start_date = None 
+    
+    try:
+        end_date = datetime.datetime.strptime(end_date[:10], date_format)
+        if end_date.year > 2200:
+            end_date = datetime.datetime(2200, 1, 1)
+
+    except: 
+        end_date = None
+
     return start_date, end_date
 
 
@@ -93,7 +109,7 @@ def get_number_of_rows():
         return total_rows
 
 
-def financial_statement_iterator(end_idx=None, length=None, buffer_size=500):
+def financial_statement_iterator(table, replace_existing=False, end_idx=None, length=None, buffer_size=500):
     """Provide an iterator over financial_statements in order of id
 
     Keyword arguments:
@@ -119,6 +135,20 @@ def financial_statement_iterator(end_idx=None, length=None, buffer_size=500):
         finally:
             session.close()
 
+    # if we are not replacing existing table, start at +1 max FS id in the Header table
+    if not replace_existing:
+            session = Session()
+            max_financial_statement_id = session.query(func.max(Header.financial_statement_id)).join(table).scalar()
+            curr = max_financial_statement_id + 1
+    else: 
+        curr = 1
+
+    if curr > end_idx:
+        print("All financial statements parsed. Aborting")
+        return
+
+    print("STARTING FINANCIAL STATEMENT ITERATOR AT {}".format(curr))
+
     if end_idx is not None:
         assert(isinstance(end_idx, int))
 
@@ -129,7 +159,7 @@ def financial_statement_iterator(end_idx=None, length=None, buffer_size=500):
     total_rows = get_number_of_rows()
 
     with closing(Session()) as session:
-        curr = 1
+        # curr = 1
         while curr < end_idx:
             q = session.query(FinancialStatement).filter(
                 FinancialStatement.id >= curr,

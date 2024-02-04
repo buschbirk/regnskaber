@@ -65,6 +65,15 @@ def filter_reporting_period(fs_entries):
     for entry in fs_entries:
         if entry.startDate is None and entry.endDate is None:
             continue
+
+
+        # fix errorful dates
+        if entry.startDate is not None and entry.startDate.year > 2200:
+            entry.startDate = datetime.datetime(2200,1,1)
+        
+        if entry.endDate is not None and entry.endDate.yead > 2200:
+            entry.endDate = datetime.datetime(2200,1,1)
+
         if date_is_instant(entry.startDate, entry.endDate):
             if date_is_in_range(start_date, end_date, entry.endDate):
                 # append to result

@@ -71,7 +71,7 @@ def filter_reporting_period(fs_entries):
         if entry.startDate is not None and entry.startDate.year > 2200:
             entry.startDate = datetime.datetime(2200,1,1)
         
-        if entry.endDate is not None and entry.endDate.yead > 2200:
+        if entry.endDate is not None and entry.endDate.year > 2200:
             entry.endDate = datetime.datetime(2200,1,1)
 
         if date_is_instant(entry.startDate, entry.endDate):
@@ -175,7 +175,12 @@ def financial_statement_iterator(table, replace_existing=False, end_idx=None, le
                 FinancialStatement.id < min(curr + buffer_size, end_idx)
             ).enable_eagerloads(True).all()
             for i, fs in enumerate(q):
-                entries = filter_reporting_period(fs.financial_statement_entries)
+                
+                # handle case where year cannot be parsed (year 20209). Ignore these entries
+                try:
+                    entries = filter_reporting_period(fs.financial_statement_entries)
+                except ValueError:
+                    entries = []
                 yield i+curr, total_rows, fs.id, entries
             curr += buffer_size
     return

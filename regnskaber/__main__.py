@@ -17,11 +17,11 @@ class Commands:
         fetch.fetch_to_db(processes, from_date)
 
     @staticmethod
-    def transform(table_definition_file, **general_options):
+    def transform(table_definition_file, replace_existing_table=False, **general_options):
         interactive_ensure_config_exists()
         # setup engine and Session.
         setup_database_connection()
-        transform.main(table_definition_file)
+        transform.main(table_definition_file, replace_existing_table=replace_existing_table)
 
     @staticmethod
     def reconfigure(**general_options):
@@ -51,8 +51,13 @@ parser_transform = subparsers.add_parser('transform',
                                                'fetched from erst.'))
 parser_transform.add_argument('table_definition_file', type=str,
                               help=('A file that specifies the table to be '
-                                    'created. If the table name already '
-                                    'exists, it is first deleted.'))
+                                    'created'))
+parser_transform.add_argument('-r', '--replace-existing-table', dest='replace_existing_table', 
+                              help=('If true, table is dropped if it already exists. '
+                                    'If false, keeps table and continues parsing from next available financial statement'),
+                              default=False,
+                              action='store_true')
+
 
 parser_reconfigure = subparsers.add_parser('reconfigure',
                                            help='Reconfigure database info.')

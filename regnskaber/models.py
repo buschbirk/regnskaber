@@ -52,7 +52,7 @@ class FinancialStatementEntry(Base):
 
 
 class Header(Base):
-    __tablename__ = 'Header'
+    __tablename__ = 'header'
     id = Column(Integer, Sequence('id_seq'), primary_key=True)
     financial_statement_id = Column(Integer())
     consolidated = Column(Boolean())

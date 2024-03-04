@@ -122,6 +122,8 @@ def financial_statement_iterator(table, replace_existing=False, end_idx=None, le
     """Provide an iterator over financial_statements in order of id
 
     Keyword arguments:
+    replace_existing -- if True, drops any existing table and replaces it, 
+                        if False, continues parsing from max fin. statement ID in db
     end_idx -- One past the last financial_statement_id to iterate over.
     length -- The number of financial statements to iterate.
               Note only one of end_idx and length can be provided.
@@ -148,7 +150,11 @@ def financial_statement_iterator(table, replace_existing=False, end_idx=None, le
     if not replace_existing:
             session = Session()
             max_financial_statement_id = session.query(func.max(Header.financial_statement_id)).join(table).scalar()
-            curr = max_financial_statement_id + 1
+            
+            if max_financial_statement_id is None:
+                curr = 1
+            else:
+                curr = max_financial_statement_id + 1
     else: 
         curr = 1
 

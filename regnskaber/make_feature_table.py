@@ -10,7 +10,7 @@ from sqlalchemy import Table, Column, ForeignKey, MetaData
 from sqlalchemy import DateTime, String, Text
 from sqlalchemy import Sequence, UniqueConstraint
 from sqlalchemy import BigInteger, Boolean, Float, Integer
-
+import sqlalchemy as sa
 
 from .models import Base, Header
 from . import Session, engine
@@ -237,7 +237,7 @@ def create_table(table_description, drop_table=False):
                 except ValueError:
                     pass
             if size:
-                return Text(size)
+                return Text()
             else:
                 return Text
         if s == 'Integer':
@@ -262,9 +262,14 @@ def create_table(table_description, drop_table=False):
         columns.append(column)
 
     t = Table(tablename, metadata, *columns, mysql_ROW_FORMAT='COMPRESSED')
+        
     if drop_table:
         t.drop(engine, checkfirst=True)
         t.create(engine, checkfirst=False)
+
+    # if table does not exist, create it
+    t.create(engine, checkfirst=True)
+
     return t
 
 
@@ -435,10 +440,9 @@ def register_method(name, func):
 
 
 def main(table_descriptions_file, replace_existing_table=False):
-
     # if replace existing table, drops existing (with data)
 
-    Base.metadata.create_all(engine)
+    Base.metadata.create_all(engine, checkfirst=True)
     tables = dict()
 
     with open(table_descriptions_file) as fp:

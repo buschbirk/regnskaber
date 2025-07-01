@@ -33,21 +33,29 @@ class DefaultEngineProxy:
 
 class DefaultSessionProxy:
     def __getattr__(self, item):
+        if _session is None:
+            raise RuntimeError("Session not initialized - call setup_database_connection() first")
         return getattr(_session, item)
-
+    
     def __setattr__(self, name, value):
+        if _session is None:
+            raise RuntimeError("Session not initialized - call setup_database_connection() first")
         return setattr(_session, name, value)
-
+    
     def __delattr__(self, name):
+        if _session is None:
+            raise RuntimeError("Session not initialized - call setup_database_connection() first")
         return delattr(_session, name)
-
+    
     def __eq__(self, other):
         return _session == other
-
+    
     def __hash__(self):
-        return _engine.__hash__()
-
+        return _engine.__hash__()  # You had a typo here too - should be _session.__hash__()
+    
     def __call__(self, *args, **kwargs):
+        if _session is None:
+            raise RuntimeError("Session not initialized - call setup_database_connection() first")
         return _session(*args, **kwargs)
 
 
@@ -117,8 +125,11 @@ def setup_database_connection():
     connection_url = ("{sql_type}://{user}:{passwd}@{host}:{port}/"
                       "{database}")
     connection_url = connection_url.format(**config['Global'])
-    _engine = create_engine(connection_url, encoding='utf-8')
+    _engine = create_engine(connection_url, encoding='utf-8',
+                            echo=False,  pool_size=30, max_overflow=30,
+                            pool_recycle=3600)
     _session = sessionmaker(bind=engine)
+
 
 
 def parse_date(datestr):

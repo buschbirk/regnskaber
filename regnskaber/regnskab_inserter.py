@@ -59,9 +59,11 @@ def insert_regnskab(regnskab):
                     koncern=koncern
                 )
             )
-
+        
         session.commit()
-    except Exception:
+        # print("FINISHED COMMIT")
+    except Exception as e:
+        print(repr(e))
         session.rollback()
         raise
     finally:
@@ -70,4 +72,5 @@ def insert_regnskab(regnskab):
 
 
 def drive_regnskab(regnskab):
+    # print("INSERTING REGNSKAB")
     insert_regnskab(regnskab)
